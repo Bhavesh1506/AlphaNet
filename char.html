@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Character Recognition</title>
+    <style>
+      body {
+        display: flex;
+        height: 100vh;
+        justify-content: center;
+        align-items: center;
+        background-color: #f3f4f6;
+        font-family: Arial, sans-serif;
+      }
+      .container {
+        background-color: #ffffff;
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        text-align: center;
+        width: 320px;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(5, 40px);
+        gap: 5px;
+        margin: 20px 0;
+      }
+      .cell {
+        width: 40px;
+        height: 40px;
+        background-color: #ddd;
+        border: 1px solid #bbb;
+        cursor: pointer;
+        transition: background-color 0.2s;
+      }
+      .cell:hover {
+        background-color: #c8e6c9;
+      }
+      .cell.active {
+        background-color: #4caf50;
+      }
+      .btn-container {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+      }
+      button {
+        background-color: #4caf50;
+        color: #fff;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 6px;
+        cursor: pointer;
+        flex: 1;
+      }
+      button.clear-btn {
+        background-color: #f44336;
+      }
+      #result {
+        margin-top: 15px;
+        font-weight: bold;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Character Recognition</h1>
+      <div class="grid" id="grid"></div>
+      <div class="btn-container">
+        <button onclick="submitPattern()">Recognize Character</button>
+        <button class="clear-btn" onclick="clearGrid()">Clear Grid</button>
+      </div>
+      <div id="result"></div>
+    </div>
+
+    <script>
+      const grid = document.getElementById("grid");
+      const cells = [];
+
+      // Create the 5x5 grid
+      for (let i = 0; i < 25; i++) {
+        const cell = document.createElement("div");
+        cell.className = "cell";
+        cell.addEventListener("click", () => {
+          cell.classList.toggle("active");
+        });
+        grid.appendChild(cell);
+        cells.push(cell);
+      }
+
+      function submitPattern() {
+        const pattern = [];
+        for (let i = 0; i < 5; i++) {
+          const row = [];
+          for (let j = 0; j < 5; j++) {
+            const cellIndex = i * 5 + j;
+            row.push(cells[cellIndex].classList.contains("active") ? 1 : 0);
+          }
+          pattern.push(row);
+        }
+
+        fetch("/recognize", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ pattern }),
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            const resultDiv = document.getElementById("result");
+            if (data.recognized_character) {
+              resultDiv.textContent = `Recognized Character: ${data.recognized_character}`;
+            } else {
+              resultDiv.textContent = `Error: ${
+                data.error ||
+                "Unknown error occurred. Ensure the backend is running."
+              }`;
+            }
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+            document.getElementById("result").textContent =
+              "Failed to connect to the server. Please check if the server is running.";
+          });
+      }
+
+      function clearGrid() {
+        cells.forEach((cell) => cell.classList.remove("active"));
+        document.getElementById("result").textContent = "";
+      }
+    </script>
+  </body>
+</html>
